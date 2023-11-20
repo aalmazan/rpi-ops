@@ -1,0 +1,40 @@
+---
+- name: Make SSH dir
+  file:
+    path: "~/.ssh"
+    state: directory
+    mode: 0744
+
+- name: Ensure `~/.ssh/authorized_keys` exists
+  file:
+    path: "~/.ssh/authorized_keys"
+    state: touch
+    mode: 0600
+
+- name: Set authorized key taken from file
+  ansible.posix.authorized_key:
+    user: pi
+    state: present
+    key: "{{ lookup('file', '/home/allan/.ssh/id_rpi.pub') }}"
+
+- name: Update apt cache
+  become: yes
+  apt:
+    name: "*"
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Update packages to newest
+  become: yes
+  apt:
+    upgrade: dist
+    force_apt_get: yes
+
+- name: Install things that should be on every node
+  become: yes
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - vim
